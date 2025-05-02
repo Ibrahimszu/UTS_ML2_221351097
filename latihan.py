@@ -1,60 +1,50 @@
-# prompt: buatkan streamlit sesuai ini https://www.kaggle.com/datasets/nehalbirla/motorcycle-dataset/data
+import streamlit as st # type: ignore
+import pandas as pd # type: ignore
+import numpy as np # type: ignore
+from sklearn.model_selection import train_test_split # type: ignore
+from sklearn.linear_model import LinearRegression # type: ignore
 
-import streamlit as st
-import pandas as pd
-import numpy as np
-import pickle
-from sklearn.preprocessing import StandardScaler
+# Load your pre-trained model and data (replace with your actual loading logic)
+# ... (Your data loading and model training code from the previous example) ...
 
-# Load the trained model
-with open('finalized_model.sav', 'rb') as f:
-    model = pickle.load(f)
+# Dummy data and model (replace with your actual data and model)
+df = pd.DataFrame({
+    'year': [2018, 2019, 2020, 2021],
+    'km_driven': [10000, 20000, 30000, 40000],
+    'selling_price': [50000, 60000, 70000, 80000],
+    'owner_Second Owner': [0,1,0,0],
+    'seller_type_Individual': [1,0,1,0],
+    'brand_Royal Enfield': [0,0,0,1]
 
-# Load the scaler (if used during training)
-# scaler = StandardScaler() # Assuming you used StandardScaler
-# # ... load scaler parameters if needed
+})
 
-# Function to preprocess user input
-def preprocess_input(year, km_driven, owner, brand):
-    input_data = pd.DataFrame({
-        'year': [year],
-        'km_driven': [km_driven],
-        'owner': [owner]
-    })
-
-    # One-hot encode the brand (assuming you did this during training)
-    brands = ['Honda', 'Yamaha', 'Bajaj', 'KTM', 'Royal Enfield', 'Suzuki', 'TVS'] # add all possible brands here
-    for b in brands:
-        input_data[b] = 0
-    input_data[brand] = 1
-
-    # Scale the features
-    # scaled_data = scaler.transform(input_data)  # Uncomment if you used scaling
-    # return scaled_data
-    return input_data
-
+X = df.drop('selling_price', axis=1)
+y = df['selling_price']
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+lr = LinearRegression()
+lr.fit(X_train, y_train)
 
 # Streamlit app
-st.title("Motorcycle Price Prediction")
+st.title("Used Motorcycle Price Prediction")
 
-# Get user input
-year = st.number_input("Year", min_value=2001, max_value=2023, value=2018)
-km_driven = st.number_input("Kilometers Driven", min_value=0, value=25000)
-owner = st.selectbox("Owner", [0, 1, 2, 3])
-brands = ['Honda', 'Yamaha', 'Bajaj', 'KTM', 'Royal Enfield', 'Suzuki', 'TVS', 'Other']
-brand = st.selectbox("Brand", brands)
+# Input features
+year = st.number_input("Year", min_value=2000, max_value=2024, value=2020)
+km_driven = st.number_input("Kilometers Driven", min_value=0, value=10000)
+owner = st.selectbox("Owner", ["First Owner", "Second Owner"])
+seller_type = st.selectbox("Seller Type", ["Individual", "Dealer"])
+brand = st.selectbox("Brand", ["Royal Enfield", "Other"]) # Add other brands
 
-# Preprocess user input
-input_data = preprocess_input(year, km_driven, owner, brand)
+
+# Convert categorical inputs to numerical using your pre-trained model's encoding
+# (adjust based on your actual model's expected input)
+input_data = pd.DataFrame({
+    'year': [year],
+    'km_driven': [km_driven],
+    'owner_Second Owner': [1 if owner == "Second Owner" else 0],
+    'seller_type_Individual': [1 if seller_type == "Individual" else 0],
+    'brand_Royal Enfield': [1 if brand == "Royal Enfield" else 0]
+})
 
 if st.button("Predict Price"):
-    try:
-        # Make prediction
-        prediction = model.predict(input_data)
-
-        # Display prediction
-        st.success(f"Predicted Price: {prediction[0]:.2f}")
-
-    except ValueError as e:
-        st.error(f"Error during prediction: {e}")
-
+    prediction = lr.predict(input_data)[0]
+    st.write(f"Predicted Selling Price: {prediction:.2f}")
